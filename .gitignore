@@ -8,3 +8,4 @@ backup
 !*__init__.py
 
 scripts/matlab/*
+needs_refactoring/*

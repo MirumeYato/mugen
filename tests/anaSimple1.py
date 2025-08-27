@@ -24,7 +24,7 @@ def simple_test(run_name, dataset_name, create_model, unpack, pack, create_foldi
     """
     Simple test.
         This model is general example of how you can use :func:``fold_1simple`` 
-        and model :func:``oneway_model`` for predicting distance in [METERS] from only CSI
+        and model :func:``oneway_model`` for predicting real target from only vectored fetures (without time stamps)
     """
     eph = 1
 
