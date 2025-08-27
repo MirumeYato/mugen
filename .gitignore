@@ -6,3 +6,5 @@ output/*
 backup
 *.png
 !*__init__.py
+
+scripts/matlab/*
