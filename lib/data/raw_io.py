@@ -7,7 +7,7 @@ from tqdm import trange
 from lib import PATH
 DATA_DIR = os.path.join(PATH, "data")
 
-from dsp.spectral_methods import estimate_trend_phase as slope, estimate_peak_music as music
+from lib.dsp.spectral_methods import estimate_trend_phase as slope, estimate_peak_music as music
 
 # --- Data loading and feature extraction ---
 
@@ -96,7 +96,7 @@ def load_data(filename, name_pattern = None):
     rtt = np.array(rtt)
     return features, targets, slope_estimates, music_estimates, rtt, time_stamp_1, time_stamp_2, time_stamp_3, time_stamp_4
 
-from joblib import Parallel, delta_ted
+from joblib import Parallel, delayed
 from tqdm import trange
 import numpy as np
 
@@ -175,7 +175,7 @@ class SynthDataset:
                 return safe_music(feature_vector), safe_slope(feature_vector)
             
             results = Parallel(n_jobs=-1, backend="loky")(
-                delta_ted(process_both)(feature_vector) for feature_vector in cach_chunk_arr
+                delayed(process_both)(feature_vector) for feature_vector in cach_chunk_arr
             )
             music_results, slope_results = zip(*results)
 
@@ -273,7 +273,7 @@ class SynthExtDataset:
                 return safe_music(x, y, z), safe_slope(x, y, z)
             
             results = Parallel(n_jobs=-1, backend="loky")(
-                delta_ted(process_both)(feature_vector2, feature_vector4, rtt) for feature_vector2, feature_vector4, rtt in zip(cach_chunk_arr2, cach_chunk_arr4, rtt_chunk)
+                delayed(process_both)(feature_vector2, feature_vector4, rtt) for feature_vector2, feature_vector4, rtt in zip(cach_chunk_arr2, cach_chunk_arr4, rtt_chunk)
             )
             music_results, slope_results = zip(*results)
             valid_mask = ~np.isnan(music_results) & ~np.isnan(slope_results)

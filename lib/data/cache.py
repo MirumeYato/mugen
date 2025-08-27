@@ -2,6 +2,8 @@ import os
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import random
+import pickle
 
 from lib import PATH
 from .raw_io import RealStPDataset, load_data, SynthDataset, SynthExtDataset
@@ -257,3 +259,73 @@ def process_real_StP_chunked():
     np.save(out_features_path, features_arr)
     np.save(out_targets_path, targets_arr)
     np.save(out_source_path, source_arr) 
+
+def make_dummy_dataset(n_samples=1000, n_features=256, out_file=None):
+    """
+    Create a dummy dataset with the same structure as the original project
+    and save it to a .pkl file.
+
+    Parameters
+    ----------
+    n_samples : int
+        Number of samples to generate.
+    n_features : int
+        Length of each feature vector (per branch).
+    out_file : str
+        Output .pkl filename.
+    """
+    if out_file is None: out_file = os.path.join(DATA_DIR, 'dummy_data.pkl')
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+        
+    rng = np.random.default_rng()
+
+    # Possible source files (scenarios)
+    source_files = [
+        'Pure0p35', 'Pure2', 'Pure5', 'Pure8', 
+        'Pure10', 'Pure13', 'Pure15', 'Pure18',  
+        'Noisy3','Noisy5', 'Noisy8', 'Noisy12', 
+        'Perturbation8', 'Perturbation9', 'Perturbation10', 'Perturbation11'
+    ]
+
+    data = []
+    for _ in range(n_samples):
+        # Random "features" (2 vectors of length n_features)
+        features = rng.normal(size=(4, n_features)).round(3).tolist()
+
+        # Random targets & estimates
+        target = float(rng.uniform(0, 20))              # example: distance in [0,20]
+        slope_est = float(rng.normal(10, 5))
+        music_est = float(rng.normal(10, 5))
+        rtt = float(rng.normal(0, 50))
+
+        # Random timestamps (big integers ~10^12)
+        time_stamps = rng.integers(6e12, 8e12, size=4).astype(np.int64)
+
+        # Random source file
+        source_file = random.choice(source_files)
+
+        row = {
+            "features": features,
+            "target": target,
+            "slope_est": slope_est,
+            "music_est": music_est,
+            "rtt": rtt,
+            "time_stamp_1": time_stamps[0],
+            "time_stamp_2": time_stamps[1],
+            "time_stamp_3": time_stamps[2],
+            "time_stamp_4": time_stamps[3],
+            "source_file": source_file,
+        }
+        data.append(row)
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    print(df.head())
+
+    # Save as pickle
+    with open(out_file, "wb") as f:
+        pickle.dump(df, f)
+
+    print(f"Dummy dataset saved to {out_file} with {n_samples} samples.")
+    

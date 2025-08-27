@@ -14,12 +14,13 @@ sys.path.insert(0, PATH)
 #===============================#
 
 from lib.data.cache import process_real, process_real_StP_chunked, \
-    process_new_synth_chunked, process_synth_ext_chunked
+    process_new_synth_chunked, process_synth_ext_chunked, make_dummy_dataset
 
 if __name__ == "__main__":
     # Choose function for data extraction
-    process_real()
+    # process_real()
     # process_new_synth_chunked()
     # process_synth_ext_chunked()
     # process_real_StP_chunked()
+    make_dummy_dataset(n_samples=5000, n_features=256)
     pass
