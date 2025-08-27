@@ -1,0 +1,8 @@
+*.pyc
+*.pyo
+data/*
+__*
+output/*
+backup
+*.png
+!*__init__.py
