@@ -206,7 +206,7 @@ def build_pointnet_model(input_shape):
 
 # # ========== Model Builder ==========
 
-# def build_csi_model_refined(input_shape=(2, 256), L=128):
+# def build_model_refined(input_shape=(2, 256), L=128):
 #     inp = Input(shape=input_shape)
 
 #     # Branch 1: Raw CNN (ResNet style)

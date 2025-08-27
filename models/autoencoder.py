@@ -125,7 +125,7 @@ class CSICompositeLoss(tf.keras.losses.Loss):
                  delta=0.0,      # Cov MSE
                  lam=0.0,        # Contrastive (optional)
                  use_contrastive=False,
-                 name='csi_composite_loss'):
+                 name='feat_composite_loss'):
         super().__init__(name=name)
         self.alpha = alpha
         self.beta = beta
