@@ -260,72 +260,90 @@ def process_real_StP_chunked():
     np.save(out_targets_path, targets_arr)
     np.save(out_source_path, source_arr) 
 
-def make_dummy_dataset(n_samples=1000, n_features=256, out_file=None):
-    """
-    Create a dummy dataset with the same structure as the original project
-    and save it to a .pkl file.
+# --- Correlated mapping: source_file -> base target value ---
+SOURCE_TARGETS = {
+    'Pure0p35': 0.35, 'Pure2': 2.0, 'Pure5': 5.0, 'Pure8': 8.0,
+    'Pure10': 10.0, 'Pure13': 13.0, 'Pure15': 15.0, 'Pure18': 18.0,
+    'Noisy3': 3.0, 'Noisy5': 5.0, 'Noisy8': 8.0, 'Noisy12': 12.0,
+    'Perturbation8': 8.0, 'Perturbation9': 9.0, 'Perturbation10': 10.0, 'Perturbation11': 11.0
+}
 
-    Parameters
-    ----------
-    n_samples : int
-        Number of samples to generate.
-    n_features : int
-        Length of each feature vector (per branch).
-    out_file : str
-        Output .pkl filename.
+# Simple rule set to vary noise/bias by family (optional, edit as you like)
+FAMILY_RULES = {
+    'Pure':          dict(sigma_target=0.15, slope_sigma=0.5, music_sigma=0.6,  rtt_mu=0.0,  rtt_sigma=20.0, bias=0.0),
+    'Noisy':         dict(sigma_target=0.9,  slope_sigma=1.2, music_sigma=1.4,  rtt_mu=0.0,  rtt_sigma=50.0, bias=0.0),
+    'Perturbation':  dict(sigma_target=0.5,  slope_sigma=0.9, music_sigma=1.0,  rtt_mu=-50., rtt_sigma=30.0, bias=0.2),
+}
+
+def _family_of(name: str) -> str:
+    for fam in FAMILY_RULES.keys():
+        if name.startswith(fam):
+            return fam
+    return 'Pure'  # fallback
+
+def make_dummy_dataset(n_samples=1000, n_features=256, out_file=None, data_dir="data"):
     """
-    if out_file is None: out_file = os.path.join(DATA_DIR, 'dummy_data.pkl')
-    os.makedirs(os.path.dirname(out_file), exist_ok=True)
-        
+    Create a dummy dataset with structure:
+      features: (4, n_features) list (two vectors)
+      target: correlated with source_file base value
+      slope_est/music_est/rtt: noisy estimates correlated with target
+      4 timestamps: large int64
+      source_file: chosen from SOURCE_TARGETS keys
+
+    Saved as a pandas DataFrame pickle.
+    """
+    if out_file is None:
+        os.makedirs(data_dir, exist_ok=True)
+        out_file = os.path.join(data_dir, "dummy_data.pkl")
+
     rng = np.random.default_rng()
+    source_names = list(SOURCE_TARGETS.keys())
 
-    # Possible source files (scenarios)
-    source_files = [
-        'Pure0p35', 'Pure2', 'Pure5', 'Pure8', 
-        'Pure10', 'Pure13', 'Pure15', 'Pure18',  
-        'Noisy3','Noisy5', 'Noisy8', 'Noisy12', 
-        'Perturbation8', 'Perturbation9', 'Perturbation10', 'Perturbation11'
-    ]
-
-    data = []
+    rows = []
     for _ in range(n_samples):
-        # Random "features" (2 vectors of length n_features)
-        features = rng.normal(size=(4, n_features)).round(3).tolist()
+        # 1) pick a source and base target
+        src = random.choice(source_names)
+        base = SOURCE_TARGETS[src]
+        fam = _family_of(src)
+        rules = FAMILY_RULES[fam]
 
-        # Random targets & estimates
-        target = float(rng.uniform(0, 20))              # example: distance in [0,20]
-        slope_est = float(rng.normal(10, 5))
-        music_est = float(rng.normal(10, 5))
-        rtt = float(rng.normal(0, 50))
+        # 2) target correlated with source (base + small noise + optional bias)
+        target = float(base + rng.normal(rules['bias'], rules['sigma_target']))
 
-        # Random timestamps (big integers ~10^12)
-        time_stamps = rng.integers(6e12, 8e12, size=4).astype(np.int64)
+        # 3) features (4 × n_features), slightly dependent on target (tiny signal)
+        #    so that models can learn weak correlation
+        x0 = rng.normal(size=n_features) + 0.05 * target
+        x1 = rng.normal(size=n_features) - 0.03 * target
+        x2 = rng.normal(size=n_features) + 0.06 * target
+        x3 = rng.normal(size=n_features) - 0.02 * target
+        features = np.stack([x0, x1, x2, x3], axis=0).round(3).tolist()
 
-        # Random source file
-        source_file = random.choice(source_files)
+        # 4) auxiliary estimates correlated with target
+        slope_est = float(target + rng.normal(0.0, rules['slope_sigma']))
+        music_est = float(target + rng.normal(0.0, rules['music_sigma']))
+        rtt      = float(rules['rtt_mu'] + rng.normal(0.0, rules['rtt_sigma']))
 
-        row = {
+        # 5) timestamps (big int64). You can enforce ordering if you want; keeping random here.
+        t = rng.integers(6_000_000_000_000, 8_000_000_000_000, size=4, dtype=np.int64)
+
+        rows.append({
             "features": features,
             "target": target,
             "slope_est": slope_est,
             "music_est": music_est,
             "rtt": rtt,
-            "time_stamp_1": time_stamps[0],
-            "time_stamp_2": time_stamps[1],
-            "time_stamp_3": time_stamps[2],
-            "time_stamp_4": time_stamps[3],
-            "source_file": source_file,
-        }
-        data.append(row)
+            "time_stamp_1": int(t[0]),
+            "time_stamp_2": int(t[1]),
+            "time_stamp_3": int(t[2]),
+            "time_stamp_4": int(t[3]),
+            "source_file": src,
+        })
 
-    # Create DataFrame
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(rows)
 
-    print(df.head())
-
-    # Save as pickle
     with open(out_file, "wb") as f:
         pickle.dump(df, f)
 
+    print(df.head(5))
     print(f"Dummy dataset saved to {out_file} with {n_samples} samples.")
-    
+    return df
