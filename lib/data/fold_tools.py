@@ -33,7 +33,7 @@ def fold_n_files(
     """
     folds: List[Tuple[List[int], List[int]]] = []
     file_list = sorted(df['source_file'].unique(), key=extract_sort_key)
-    # print(f'DEBUG: fold ordering is: {file_list}')
+    print(f'DEBUG: fold ordering is: {file_list}')
     for f in file_list:
         train_idx = df.index[df['source_file'] != f].tolist()
         test_idx = df.index[df['source_file'] == f].tolist()
@@ -317,7 +317,7 @@ def fold_3groups(df: pd.DataFrame) -> List[Tuple[List[int], pd.Series]]:
         For each group: (train_idx, test_mask_series).
     """
     folds: List[Tuple[List[int], pd.Series]] = []
-    types = ['Pure_data', 'Minor_noise', 'Intense_disturbance']
+    types = ['Pure', 'Noisy', 'Perturbation']
     for fold_idx, fold_name in enumerate(types):
         file_list_without_t = df['source_file'][~df['source_file'].str.startswith(fold_name)].unique()
         if len(folds) <= fold_idx:

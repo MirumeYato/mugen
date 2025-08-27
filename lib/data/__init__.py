@@ -7,10 +7,10 @@ from .fold_tools import fold_1simple, fold_10euqal, fold_3groups, fold_n_files
 name_list_3groups = np.array(['Pure_data', 'Minor_noise', 'Intense_disturbance'],
         dtype=object)
 name_list_n_files = np.array([
-    'Pure0p35', 'Pure2', 'Pure5', 'pure8',
-    'Pure10', 'Pure13', 'Pure15', 'Pure18', 
-    'Noisy3','Noisy5', 'Noisy8', 'Noisy12',
-    'Perturbation8', 'Perturbation9', 'Perturbation10', 'Perturbation11'],
+    'Noisy3', 'Noisy5', 'Noisy8', 'Noisy12', 
+    'Perturbation8', 'Perturbation9', 'Perturbation10', 'Perturbation11', 
+    'Pure0p35', 'Pure2', 'Pure5', 'Pure8', 
+    'Pure10', 'Pure13', 'Pure15', 'Pure18'],
     dtype=object)
 name_list3_n_files_pure = np.array([
     '0p35', '2', '5', '8',
